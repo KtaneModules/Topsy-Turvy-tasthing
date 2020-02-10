@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using KModkit;
 using rnd = UnityEngine.Random;
@@ -23,6 +24,8 @@ public class topsyTurvy : MonoBehaviour
 	private int solution;
 	private List<string> decoyWords = new List<string>();
 	private Coroutine cycle;
+    private bool animating = false;
+    private bool pressed = false;
 
 	private static readonly string[] displayWords = new string[16] { "Topsy", "Robot", "Cloud", "Round", "Quilt", "Found", "Plaid", "Curve", "Water", "Ovals", "Verse", "Sandy", "Frown", "Windy", "Curse", "Ghost" };
 	private static readonly string[][] answerWords = new string[16][] {
@@ -53,6 +56,7 @@ public class topsyTurvy : MonoBehaviour
     	moduleId = moduleIdCounter++;
 		button.OnInteract += delegate () { PressButton(); return false; };
 		button.OnInteractEnded += delegate () { ReleaseButton(); };
+        module.OnActivate += OnActivate;
     }
 
     void Start()
@@ -65,9 +69,14 @@ public class topsyTurvy : MonoBehaviour
 		decoyWords.Add(correctWord);
 		decoyWords.Shuffle();
 		solution = decoyWords.IndexOf(correctWord);
-		screenTexts[0].text = displayWords[displayIndex];
-		screenTexts[0].color = textColors.PickRandom();
+		screenTexts[0].text = "";
 		screenTexts[1].text = "";
+    }
+
+    void OnActivate()
+    {
+        screenTexts[0].text = displayWords[displayIndex];
+        screenTexts[0].color = textColors.PickRandom();
     }
 
 	void PressButton()
@@ -76,28 +85,37 @@ public class topsyTurvy : MonoBehaviour
 		if (moduleSolved)
 			return;
 		cycle = StartCoroutine(CycleWords());
+        pressed = true;
 	}
 
 	void ReleaseButton()
 	{
-		audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.BigButtonPress, transform);
-		if (moduleSolved)
-			return;
-		StopCoroutine(cycle);
-		var submitted = currentPos - 1;
-		if (submitted != solution)
-		{
-			module.HandleStrike();
-			Debug.LogFormat("[Topsy Turvy #{0}] You released the button when the displayed word was {1}. That was incorrect. Strike!", moduleId, decoyWords[submitted].ToLowerInvariant());
-			Debug.LogFormat("[Topsy Turvy #{0}] Resetting...", moduleId);
-			Start();
-		}
-		else
-		{
-			moduleSolved = true;
-			StartCoroutine(Solve());
-			Debug.LogFormat("[Topsy Turvy #{0}] You released the button when the displayed word was {1}. That was correct. Module solved!", moduleId, correctWord.ToLowerInvariant());
-		}
+        if (pressed)
+        {
+            audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.BigButtonRelease, transform);
+            if (moduleSolved)
+                return;
+            if (cycle != null)
+            {
+                StopCoroutine(cycle);
+                cycle = null;
+            }
+            var submitted = currentPos - 1;
+            if (submitted != solution)
+            {
+                module.HandleStrike();
+                Debug.LogFormat("[Topsy Turvy #{0}] You released the button when the displayed word was {1}. That was incorrect. Strike!", moduleId, decoyWords[submitted].ToLowerInvariant());
+                Debug.LogFormat("[Topsy Turvy #{0}] Resetting...", moduleId);
+                Start();
+            }
+            else
+            {
+                moduleSolved = true;
+                StartCoroutine(Solve());
+                Debug.LogFormat("[Topsy Turvy #{0}] You released the button when the displayed word was {1}. That was correct. Module solved!", moduleId, correctWord.ToLowerInvariant());
+            }
+            pressed = false;
+        }
 	}
 
 	IEnumerator CycleWords()
@@ -110,12 +128,16 @@ public class topsyTurvy : MonoBehaviour
 			screenTexts[1].color = textColors.PickRandom();
 			screenTexts[1].text = decoyWords[currentPos];
 			currentPos = (currentPos + 1) % count;
-			yield return new WaitForSeconds(1f);
-		}
+            if (speed == true)
+                yield return new WaitForSeconds(0.2f);
+            else
+                yield return new WaitForSeconds(1f);
+        }
 	}
 
 	IEnumerator Solve()
 	{
+        animating = true;
 		var messages = new string[3][]
 		{
 			new string[2] { "Good", "Job" },
@@ -136,5 +158,80 @@ public class topsyTurvy : MonoBehaviour
 			screenText.color = solvedColor;
 		module.HandlePass();
 		audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.CorrectChime, transform);
-	}
+        animating = false;
+    }
+
+    // Twitch Plays
+    private bool speed = false;
+
+    private IEnumerator cancelSpeed()
+    {
+        yield return new WaitForSeconds(5.0f);
+        speed = false;
+    }
+
+    #pragma warning disable 414
+    private readonly string TwitchHelpMessage = @"!{0} submit <word> [Submits the specified word]";
+    #pragma warning restore 414
+    IEnumerator ProcessTwitchCommand(string command)
+    {
+        string[] parameters = command.Split(' ');
+        if (Regex.IsMatch(parameters[0], @"^\s*submit\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+        {
+            yield return null;
+            if(parameters.Length > 2)
+            {
+                yield return "sendtochaterror Too many parameters!";
+            }
+            else if (parameters.Length == 2)
+            {
+                int index = -1;
+                for (int i = 0; i < displayWords.Length; i++)
+                {
+                    if (displayWords[i].EqualsIgnoreCase(parameters[1]))
+                        index = i;
+                }
+                if (index == -1)
+                {
+                    yield return "sendtochaterror The specified word '" + parameters[1] + "' is not an option!";
+                    yield break;
+                }
+                if (correctWord.EqualsIgnoreCase(parameters[1]))
+                    yield return "solve";
+                else
+                    yield return "strike";
+                speed = true;
+                StartCoroutine(cancelSpeed());
+                if(cycle == null)
+                    button.OnInteract();
+                while (!parameters[1].EqualsIgnoreCase(screenTexts[1].text))
+                {
+                    yield return "trycancel Word submission halted due to a request to cancel!";
+                    yield return new WaitForSeconds(0.1f);
+                }
+                speed = false;
+                button.OnInteractEnded();
+            }
+            else
+            {
+                yield return "sendtochaterror Please include a word to submit!";
+            }
+            yield break;
+        }
+    }
+
+    IEnumerator TwitchHandleForcedSolve()
+    {
+        speed = true;
+        if (cycle == null)
+            button.OnInteract();
+        while (!correctWord.EqualsIgnoreCase(screenTexts[1].text))
+        {
+            yield return true;
+            yield return new WaitForSeconds(0.1f);
+        }
+        speed = false;
+        button.OnInteractEnded();
+        while(animating) { yield return true; yield return new WaitForSeconds(0.1f); }
+    }
 }
