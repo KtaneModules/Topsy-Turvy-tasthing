@@ -128,10 +128,7 @@ public class topsyTurvy : MonoBehaviour
 			screenTexts[1].color = textColors.PickRandom();
 			screenTexts[1].text = decoyWords[currentPos];
 			currentPos = (currentPos + 1) % count;
-            if (speed == true)
-                yield return new WaitForSeconds(0.2f);
-            else
-                yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(1f);
         }
 	}
 
@@ -162,29 +159,37 @@ public class topsyTurvy : MonoBehaviour
     }
 
     // Twitch Plays
-    private bool speed = false;
-
-    private IEnumerator cancelSpeed()
-    {
-        yield return new WaitForSeconds(5.0f);
-        speed = false;
-    }
-
     #pragma warning disable 414
-    private readonly string TwitchHelpMessage = @"!{0} submit <word> [Submits the specified word]";
+    private readonly string TwitchHelpMessage = @"!{0} hold [Hold the button] | !{0} release <word> [Releases the button when the specified word is displayed]";
     #pragma warning restore 414
     IEnumerator ProcessTwitchCommand(string command)
     {
-        string[] parameters = command.Split(' ');
-        if (Regex.IsMatch(parameters[0], @"^\s*submit\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+        if (Regex.IsMatch(command, @"^\s*hold\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
         {
             yield return null;
-            if(parameters.Length > 2)
+            if (cycle != null)
+            {
+                yield return "sendtochaterror The button is already being held!";
+                yield break;
+            }
+            button.OnInteract();
+            yield break;
+        }
+        string[] parameters = command.Split(' ');
+        if (Regex.IsMatch(parameters[0], @"^\s*release\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+        {
+            yield return null;
+            if (parameters.Length > 2)
             {
                 yield return "sendtochaterror Too many parameters!";
             }
             else if (parameters.Length == 2)
             {
+                if (cycle == null)
+                {
+                    yield return "sendtochaterror Releasing the button is not possible unless it is held first!";
+                    yield break;
+                }
                 int index = -1;
                 for (int i = 0; i < displayWords.Length; i++)
                 {
@@ -200,16 +205,11 @@ public class topsyTurvy : MonoBehaviour
                     yield return "solve";
                 else
                     yield return "strike";
-                speed = true;
-                StartCoroutine(cancelSpeed());
-                if(cycle == null)
-                    button.OnInteract();
                 while (!parameters[1].EqualsIgnoreCase(screenTexts[1].text))
                 {
                     yield return "trycancel Word submission halted due to a request to cancel!";
                     yield return new WaitForSeconds(0.1f);
                 }
-                speed = false;
                 button.OnInteractEnded();
             }
             else
@@ -222,16 +222,17 @@ public class topsyTurvy : MonoBehaviour
 
     IEnumerator TwitchHandleForcedSolve()
     {
-        speed = true;
         if (cycle == null)
+        {
             button.OnInteract();
+            yield return new WaitForSeconds(0.1f);
+        }
         while (!correctWord.EqualsIgnoreCase(screenTexts[1].text))
         {
             yield return true;
             yield return new WaitForSeconds(0.1f);
         }
-        speed = false;
         button.OnInteractEnded();
-        while(animating) { yield return true; yield return new WaitForSeconds(0.1f); }
+        while (animating) { yield return true; yield return new WaitForSeconds(0.1f); }
     }
 }
