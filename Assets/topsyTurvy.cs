@@ -90,33 +90,33 @@ public class topsyTurvy : MonoBehaviour
 
 	void ReleaseButton()
 	{
-  	if (pressed)
-    {
-    	audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.BigButtonRelease, transform);
-      if (moduleSolved)
-      	return;
-      if (cycle != null)
-      {
-      	StopCoroutine(cycle);
-        cycle = null;
-    	}
-      var submitted = currentPos;
-      if (submitted != solution)
-      {
-      	module.HandleStrike();
-        Debug.LogFormat("[Topsy Turvy #{0}] You released the button when the displayed word was {1}. That was incorrect. Strike!", moduleId, decoyWords[submitted].ToLowerInvariant());
-        Debug.LogFormat("[Topsy Turvy #{0}] Resetting...", moduleId);
-        Start();
+  		if (pressed)
+    	{
+    		audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.BigButtonRelease, transform);
+    		if (moduleSolved)
+      			return;
+      		if (cycle != null)
+      		{
+      			StopCoroutine(cycle);
+        		cycle = null;
+    		}
+    		var submitted = currentPos;
+      		if (submitted != solution)
+      		{
+      			module.HandleStrike();
+        		Debug.LogFormat("[Topsy Turvy #{0}] You released the button when the displayed word was {1}. That was incorrect. Strike!", moduleId, decoyWords[submitted].ToLowerInvariant());
+        		Debug.LogFormat("[Topsy Turvy #{0}] Resetting...", moduleId);
+        		Start();
 				OnActivate();
-      }
-      else
-      {
-      	moduleSolved = true;
-        StartCoroutine(Solve());
-        Debug.LogFormat("[Topsy Turvy #{0}] You released the button when the displayed word was {1}. That was correct. Module solved!", moduleId, correctWord.ToLowerInvariant());
-      }
-      pressed = false;
-    }
+      		}
+      		else
+      		{
+      			moduleSolved = true;
+    			StartCoroutine(Solve());
+    			Debug.LogFormat("[Topsy Turvy #{0}] You released the button when the displayed word was {1}. That was correct. Module solved!", moduleId, correctWord.ToLowerInvariant());
+      		}
+      		pressed = false;
+    	}
 	}
 
 	IEnumerator CycleWords()
@@ -129,13 +129,13 @@ public class topsyTurvy : MonoBehaviour
 			currentPos = (currentPos + 1) % count;
 			screenTexts[1].color = textColors.PickRandom();
 			screenTexts[1].text = decoyWords[currentPos];
-    	yield return new WaitForSeconds(1f);
-  	}
+    		yield return new WaitForSeconds(1f);
+  		}
 	}
 
 	IEnumerator Solve()
 	{
-    animating = true;
+    	animating = true;
 		var messages = new string[3][]
 		{
 			new string[2] { "Good", "Job" },
@@ -156,7 +156,7 @@ public class topsyTurvy : MonoBehaviour
 			screenText.color = solvedColor;
 		module.HandlePass();
 		audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.CorrectChime, transform);
-      animating = false;
+     	animating = false;
     }
 
     // Twitch Plays
