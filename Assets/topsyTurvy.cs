@@ -107,6 +107,7 @@ public class topsyTurvy : MonoBehaviour
                 Debug.LogFormat("[Topsy Turvy #{0}] You released the button when the displayed word was {1}. That was incorrect. Strike!", moduleId, decoyWords[submitted].ToLowerInvariant());
                 Debug.LogFormat("[Topsy Turvy #{0}] Resetting...", moduleId);
                 Start();
+				OnActivate();
             }
             else
             {
