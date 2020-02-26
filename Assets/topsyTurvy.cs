@@ -47,16 +47,16 @@ public class topsyTurvy : MonoBehaviour
 		new string[5] { "Robot", "Water", "Quilt", "Sandy", "Frown" }
 	};
 
-    private static int moduleIdCounter = 1;
-    private int moduleId;
-    private bool moduleSolved;
+	private static int moduleIdCounter = 1;
+	private int moduleId;
+	private bool moduleSolved;
 
     void Awake()
     {
     	moduleId = moduleIdCounter++;
 		button.OnInteract += delegate () { PressButton(); return false; };
 		button.OnInteractEnded += delegate () { ReleaseButton(); };
-        module.OnActivate += OnActivate;
+    	module.OnActivate += OnActivate;
     }
 
     void Start()
@@ -75,7 +75,7 @@ public class topsyTurvy : MonoBehaviour
 
     void OnActivate()
     {
-        screenTexts[0].text = displayWords[displayIndex];
+    	screenTexts[0].text = displayWords[displayIndex];
         screenTexts[0].color = textColors.PickRandom();
     }
 
@@ -90,33 +90,33 @@ public class topsyTurvy : MonoBehaviour
 
 	void ReleaseButton()
 	{
-        if (pressed)
-        {
-            audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.BigButtonRelease, transform);
-            if (moduleSolved)
-                return;
-            if (cycle != null)
-            {
-                StopCoroutine(cycle);
-                cycle = null;
-            }
-            var submitted = currentPos;
-            if (submitted != solution)
-            {
-                module.HandleStrike();
-                Debug.LogFormat("[Topsy Turvy #{0}] You released the button when the displayed word was {1}. That was incorrect. Strike!", moduleId, decoyWords[submitted].ToLowerInvariant());
-                Debug.LogFormat("[Topsy Turvy #{0}] Resetting...", moduleId);
-                Start();
+  	if (pressed)
+    {
+    	audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.BigButtonRelease, transform);
+      if (moduleSolved)
+      	return;
+      if (cycle != null)
+      {
+      	StopCoroutine(cycle);
+        cycle = null;
+    	}
+      var submitted = currentPos;
+      if (submitted != solution)
+      {
+      	module.HandleStrike();
+        Debug.LogFormat("[Topsy Turvy #{0}] You released the button when the displayed word was {1}. That was incorrect. Strike!", moduleId, decoyWords[submitted].ToLowerInvariant());
+        Debug.LogFormat("[Topsy Turvy #{0}] Resetting...", moduleId);
+        Start();
 				OnActivate();
-            }
-            else
-            {
-                moduleSolved = true;
-                StartCoroutine(Solve());
-                Debug.LogFormat("[Topsy Turvy #{0}] You released the button when the displayed word was {1}. That was correct. Module solved!", moduleId, correctWord.ToLowerInvariant());
-            }
-            pressed = false;
-        }
+      }
+      else
+      {
+      	moduleSolved = true;
+        StartCoroutine(Solve());
+        Debug.LogFormat("[Topsy Turvy #{0}] You released the button when the displayed word was {1}. That was correct. Module solved!", moduleId, correctWord.ToLowerInvariant());
+      }
+      pressed = false;
+    }
 	}
 
 	IEnumerator CycleWords()
@@ -129,13 +129,13 @@ public class topsyTurvy : MonoBehaviour
 			currentPos = (currentPos + 1) % count;
 			screenTexts[1].color = textColors.PickRandom();
 			screenTexts[1].text = decoyWords[currentPos];
-            yield return new WaitForSeconds(1f);
-        }
+    	yield return new WaitForSeconds(1f);
+  	}
 	}
 
 	IEnumerator Solve()
 	{
-        animating = true;
+    animating = true;
 		var messages = new string[3][]
 		{
 			new string[2] { "Good", "Job" },
@@ -156,7 +156,7 @@ public class topsyTurvy : MonoBehaviour
 			screenText.color = solvedColor;
 		module.HandlePass();
 		audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.CorrectChime, transform);
-        animating = false;
+      animating = false;
     }
 
     // Twitch Plays
@@ -165,24 +165,24 @@ public class topsyTurvy : MonoBehaviour
     #pragma warning restore 414
     IEnumerator ProcessTwitchCommand(string command)
     {
-        if (Regex.IsMatch(command, @"^\s*hold\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
-        {
-            yield return null;
-            if (cycle != null)
-            {
-                yield return "sendtochaterror The button is already being held!";
-                yield break;
-            }
-            button.OnInteract();
-            yield break;
-        }
-        string[] parameters = command.Split(' ');
+    	if (Regex.IsMatch(command, @"^\s*hold\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+    	{
+      		yield return null;
+        	if (cycle != null)
+      		{
+        		yield return "sendtochaterror The button is already being held!";
+            	yield break;
+    		}
+        button.OnInteract();
+        yield break;
+    	}
+    	string[] parameters = command.Split(' ');
         if (Regex.IsMatch(parameters[0], @"^\s*release\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
         {
-            yield return null;
+        	yield return null;
             if (parameters.Length > 2)
             {
-                yield return "sendtochaterror Too many parameters!";
+            	yield return "sendtochaterror Too many parameters!";
             }
             else if (parameters.Length == 2)
             {
@@ -195,7 +195,7 @@ public class topsyTurvy : MonoBehaviour
                 for (int i = 0; i < displayWords.Length; i++)
                 {
                     if (displayWords[i].EqualsIgnoreCase(parameters[1]))
-                        index = i;
+                    	index = i;
                 }
                 if (index == -1)
                 {
@@ -223,7 +223,7 @@ public class topsyTurvy : MonoBehaviour
 
     IEnumerator TwitchHandleForcedSolve()
     {
-        if (cycle == null)
+    	if (cycle == null)
         {
             button.OnInteract();
             yield return new WaitForSeconds(0.1f);
