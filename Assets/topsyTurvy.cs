@@ -100,7 +100,7 @@ public class topsyTurvy : MonoBehaviour
                 StopCoroutine(cycle);
                 cycle = null;
             }
-            var submitted = currentPos - 1;
+            var submitted = currentPos;
             if (submitted != solution)
             {
                 module.HandleStrike();
@@ -122,12 +122,12 @@ public class topsyTurvy : MonoBehaviour
 	{
 		var count = decoyWords.Count();
 		screenTexts[0].text = "";
-		currentPos = 0;
+		currentPos = -1;
 		while (true)
 		{
+			currentPos = (currentPos + 1) % count;
 			screenTexts[1].color = textColors.PickRandom();
 			screenTexts[1].text = decoyWords[currentPos];
-			currentPos = (currentPos + 1) % count;
             yield return new WaitForSeconds(1f);
         }
 	}
