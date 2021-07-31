@@ -18,6 +18,6 @@ MonoBehaviour:
     I \u026F\u0250 \u0287\u0250\u0265\u028D '\u0265O -\u0287\u0254\u01DDdx\u01DD no\u028E
     p\u1D09p\r\n\r\nModule idea by Pruz, implementation by TasThing.\r\n\r\nManual
     HTML: https://ktane.timwi.de/HTML/Topsy%20Turvy.html\r\nManual PDF: https://ktane.timwi.de/PDF/Topsy%20Turvy.pdf"
-  version: 
+  version: 1.1.4
   outputFolder: build
   previewImage: {fileID: 2800000, guid: 6ea084f54e22ba24aabbb531f434c8d9, type: 3}
